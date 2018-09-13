@@ -3,7 +3,11 @@ from copy import deepcopy
 class module():
 
     def __init__(self, r = None, s = None):
-        self.terms = [] if r is None or s is None else [(deepcopy(r), deepcopy(s))]
+
+        if r is not None and s is not None:
+            self.terms = [(deepcopy(r), deepcopy(s))]
+        else:
+            self.terms = []
 
     def copy(self):
         return deepcopy(self)
@@ -76,7 +80,8 @@ class module():
         m -= other # no need of copy
         return m
 
-    def __rsub__(self, other): return self - other
+    def __rsub__(self, other):
+        return self - other
 
 
     def __imul__(self, r):
@@ -109,8 +114,6 @@ class module():
         m //= r
         return m
 
-    def __getitem__(self, s):
-        if s not in self: raise  ValueError("Element not in module.")
 
     # def iterating
 
@@ -123,6 +126,29 @@ class module():
         self.current_index += 1
         return self.terms[self.current_index-1]
 
+
+    # search / find / substitute
+
+    # returns r-value of basis element s
+    def __getitem__(self, s):
+        ind = self.index(s)
+        if ind is None: raise  ValueError("Element not in module.")
+        return self.terms[ind][0]
+
+
+    # returns a list of basis elements true under function filterQ
+    def filter(self, filterQ):
+        return [s for r,s in self.terms if filterQ(s)]
+
+    # substitution, basis element s replaces with module m
+    def __setitem__(self, s, m):
+        ind = self.index(s)
+        if ind is None: raise  ValueError("Element not in module.")
+        r = self.terms[ind][0] # get r-value
+        del self.terms[ind]
+        self += m * r # makes a copy of m
+
+
     # comparing
 
     def __eq__(self, other):
@@ -131,17 +157,13 @@ class module():
     def __ne__(self, other):
         return self.terms != other.terms
 
-
     def __repr__(self):
         return (" + ".join( str(r)+str(s) for r, s in self.terms)).replace(" + -", " -")
 
-m1 = module(2, "c")
-m1 += (-6, "x")
-m2 = module(15, "a")
-m3 = module(3, "x")
-
-print(m1)
-print(m1+m2+m3)
-print(10*m1+m2//3-m3)
-
-
+"""
+m = module(2, "c") + module(15, "a") - module(3, "x")
+print("module:", m)
+print("coefficient of 'x':",m['x'])
+m['c'] = module(4,'b') + module(-3,'z')
+print("substitution:", m)
+"""
